@@ -1,4 +1,5 @@
-pragma solidity ^0.4.25;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.6.0;
 
 // It's important to avoid vulnerabilities due to numeric overflow bugs
 // OpenZeppelin's SafeMath library, when used correctly, protects agains such bugs
