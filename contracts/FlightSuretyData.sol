@@ -92,31 +92,25 @@ contract FlightSuretyData {
     /********************************************************************************************/
 
     /**
-    * @dev Get operating status of contract
+    * Get operating status of contract
     *
     * @return A bool that is the current operating status
-    */      
-    function isOperational() 
-                            public 
-                            view 
-                            returns(bool) 
-    {
+    */
+    function isOperational()
+    public
+    view
+    returns(bool) {
         return operational;
     }
 
-
     /**
-    * @dev Sets contract operations on/off
+    * Sets contract operations on/off
     *
     * When operational mode is disabled, all write transactions except for this one will fail
-    */    
-    function setOperatingStatus
-                            (
-                                bool mode
-                            ) 
-                            external
-                            requireContractOwner 
-    {
+    */
+    function setOperatingStatus (bool mode)
+    external
+    requireContractOwner() {
         operational = mode;
     }
 
