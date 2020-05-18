@@ -82,24 +82,22 @@ contract FlightSuretyApp {
     * @dev Contract constructor
     *
     */
-    constructor
-                                (
-                                ) 
-                                public 
-    {
+    constructor(address _dataContract) public {
         contractOwner = msg.sender;
+        flightSuretyData = FlightSuretyData(_dataContract);
     }
 
     /********************************************************************************************/
     /*                                       UTILITY FUNCTIONS                                  */
     /********************************************************************************************/
 
-    function isOperational() 
+    function isOperational()
+    public
                             public 
-                            pure 
-                            returns(bool) 
-    {
-        return true;  // Modify to call data contract's status
+    public
+    view
+    returns(bool) {
+        return flightSuretyData.isOperational();  // Modify to call data contract's status
     }
 
     /********************************************************************************************/
