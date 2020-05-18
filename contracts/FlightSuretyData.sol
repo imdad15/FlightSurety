@@ -63,6 +63,30 @@ contract FlightSuretyData {
         _;
     }
 
+     /**
+    * Modifier that requires the function caller to be from list of authorised accounts
+    */
+    modifier requireAirlineIsAdded() {
+        require(airlines[msg.sender].isAdded == true, 'The caller is not authorized');
+        _;
+    }
+
+
+    /********************************************************************************************/
+    /*                                         CONSTRUCTOR                                      */
+    /********************************************************************************************/
+   
+    /**
+    * Constructor
+    * The creater of the contract will be initially registered as authorised caller
+    * The deploying account becomes contractOwner
+    */
+    constructor()
+    public {
+        contractOwner = msg.sender;
+        authorisedCallers[msg.sender] = true;
+    }
+
     /********************************************************************************************/
     /*                                       UTILITY FUNCTIONS                                  */
     /********************************************************************************************/
