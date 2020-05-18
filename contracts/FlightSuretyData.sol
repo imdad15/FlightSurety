@@ -118,11 +118,22 @@ contract FlightSuretyData {
     /*                                     SMART CONTRACT FUNCTIONS                             */
     /********************************************************************************************/
 
-   /**
-    * @dev Add an airline to the registration queue
-    *      Can only be called from FlightSuretyApp contract
-    *
-    */   
+    /**
+    * Add an authorised caller.
+    * Can only be called from FlightSuretyApp contract
+    */
+     function authorizeCaller(address caller) external requireContractOwner {
+        authorisedCallers[caller] = true;
+    }
+
+
+    /**
+    * Disable authorised caller.
+    * Can only be called from FlightSuretyApp contract
+    */
+    function deauthorizeCaller(address caller) external requireContractOwner {
+        authorisedCallers[caller] = false;
+    }
     function registerAirline
                             (   
                             )
