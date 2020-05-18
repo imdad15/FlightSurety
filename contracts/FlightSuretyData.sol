@@ -134,12 +134,55 @@ contract FlightSuretyData {
     function deauthorizeCaller(address caller) external requireContractOwner {
         authorisedCallers[caller] = false;
     }
-    function registerAirline
-                            (   
-                            )
-                            external
-                            pure
-    {
+
+   /**
+    * Add an airline.
+    * Can only be called from FlightSuretyApp contract
+    */
+    function addAirline(address airlineAddress, string calldata airlineName)
+    external
+    requireIsOperational()
+    requireIsAuthorisedCaller() {
+        airlines[airlineAddress].airlineName = airlineName;
+    }
+
+    /**
+    * Check if airline is Added, i.e. Airline is added, but not participating yet.
+    * Can only be called from FlightSuretyApp contract
+    */
+    function isAdded(address airlineAddress)
+    external
+    view
+    requireIsOperational()
+    requireIsAuthorisedCaller() 
+    returns (bool) {
+        return airlines[airlineAddress].isAdded == true;
+    }
+
+
+    /**
+    * Register an airline.
+    * Can only be called from FlightSuretyApp contract
+    */
+    function registerAirline(address airlineAddress)
+    external
+    requireIsOperational()
+    requireIsAuthorisedCaller() {
+        airlines[airlineAddress].isParticipant = true;
+    }
+
+
+    /**
+    * Check if airline is Registered, i.e. Airline satisfies requirement to be participant
+    * Can only be called from FlightSuretyApp contract
+    */
+    function isRegistered(address airlineAddress)
+    external
+    view
+    requireIsOperational()
+    requireIsAuthorisedCaller() 
+    returns (bool) {
+        return airlines[airlineAddress].isParticipant;
     }
 
 
