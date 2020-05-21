@@ -26,18 +26,22 @@ contract FlightSuretyApp {
     uint8 private constant STATUS_CODE_LATE_TECHNICAL = 40;
     uint8 private constant STATUS_CODE_LATE_OTHER = 50;
 
-    uint8 constant private MIN_MULTICONSENSUS = 4;      // No of airlines required for multi-consesus [4].
+    uint8 constant private MIN_MULTICONSENSUS = 4;      // number of airlines required for multi-consesus [4].
 
-    address private contractOwner;                      // Account used to deploy contract
+    address private contractOwner;                      // account used to deploy contract.
 
-    struct Flight {
-        bool isRegistered;
-        uint8 statusCode;
-        uint256 updatedTimestamp;
-        address airline;
-    }
-    mapping (bytes32 => Flight) private flights;
-    mapping (bytes32 => uint8) private consensusAirline; // mapping of airline address to number of votes added for consensus.
+    // struct Flight {
+    //     bool isRegistered;
+    //     uint8 statusCode;
+    //     uint256 updatedTimestamp;
+    //     address airline;
+    // }
+    // mapping (bytes32 => Flight) private flights;
+    mapping (address => uint8) private needConsensus; // mapping of airline address to number of votes added for consensus.
+ 
+    address[] private participatingAirlines;
+    address[] private addedAirlines;
+
     FlightSuretyData flightSuretyData;
  
     /********************************************************************************************/
@@ -67,9 +71,17 @@ contract FlightSuretyApp {
     }
 
     /**
+    * Modifier that requires the "Airline" to be added in the list to participate later
+    */
+    modifier requireIsNotAdded(address airlineAddress) {
+        require(!flightSuretyData.isAdded(airlineAddress), "Airlines is already added");
+        _;
+    }
+
+    /**
     * Modifier that requires the "Airline" to have paid 10 Ethers to be participant
     */
-    modifier requireIsParticipant() {
+    modifier requireCallerIsParticipant() {
         require(flightSuretyData.isRegistered(msg.sender), "Caller is not registered to participate");
         _;
     }
@@ -82,9 +94,9 @@ contract FlightSuretyApp {
     * @dev Contract constructor
     *
     */
-    constructor(address _dataContract) public {
+    constructor(address _dataContractAddress) public {
         contractOwner = msg.sender;
-        flightSuretyData = FlightSuretyData(_dataContract);
+        flightSuretyData = FlightSuretyData(_dataContractAddress);
     }
 
     /********************************************************************************************/
@@ -92,8 +104,6 @@ contract FlightSuretyApp {
     /********************************************************************************************/
 
     function isOperational()
-    public
-                            public 
     public
     view
     returns(bool) {
@@ -104,18 +114,35 @@ contract FlightSuretyApp {
     /*                                     SMART CONTRACT FUNCTIONS                             */
     /********************************************************************************************/
 
-  
-   /**
-    * @dev Add an airline to the registration queue
+
+    /**
+    * Add an airline to the registration queue
     *
-    */   
-    function registerAirline
-                            (   
-                            )
-                            external
-                            pure
-                            returns(bool success, uint256 votes)
-    {
+    */
+    function addAirline()//address airlineAddress)
+    external
+    //requireIsNotAdded(airlineAddress)
+    requireCallerIsParticipant()
+    returns(bool success, uint8 votes) {
+        //votes = needConsensus[airlineAddress];
+        // if(participatingAirlines.length > MIN_MULTICONSENSUS || votes < (participatingAirlines.length/2) ){
+        //     needConsensus[airlineAddress] = votes + 1;
+        //     success = false;
+        // } else {
+        //     flightSuretyData.addAirline(airlineAddress);
+        //     success = true;
+        // }
+        return (true, 0);
+    }
+
+   /**
+    * Enable an airline to participate in contract
+    *
+    */
+    function registerAirline()//address airlineAddress)
+    external
+    returns(bool success, uint256 votes) {
+
         return (success, 0);
     }
 
@@ -123,13 +150,9 @@ contract FlightSuretyApp {
    /**
     * @dev Register a future flight for insuring.
     *
-    */  
-    function registerFlight
-                                (
-                                )
-                                external
-                                pure
-    {
+    */
+    function registerFlight ()
+    external {
 
     }
     
@@ -154,7 +177,7 @@ contract FlightSuretyApp {
     function fetchFlightStatus
                         (
                             address airline,
-                            string flight,
+                            string calldata flight,
                             uint256 timestamp                            
                         )
                         external
@@ -237,9 +260,9 @@ contract FlightSuretyApp {
     function getMyIndexes
                             (
                             )
-                            view
                             external
-                            returns(uint8[3])
+                            view
+                            returns(uint8[3] memory)
     {
         require(oracles[msg.sender].isRegistered, "Not registered as an oracle");
 
@@ -257,7 +280,7 @@ contract FlightSuretyApp {
                         (
                             uint8 index,
                             address airline,
-                            string flight,
+                            string calldata flight,
                             uint256 timestamp,
                             uint8 statusCode
                         )
@@ -287,23 +310,22 @@ contract FlightSuretyApp {
     function getFlightKey
                         (
                             address airline,
-                            string flight,
+                            string memory flight,
                             uint256 timestamp
                         )
                         pure
                         internal
-                        returns(bytes32) 
+                        returns(bytes32)
     {
         return keccak256(abi.encodePacked(airline, flight, timestamp));
     }
 
     // Returns array of three non-duplicating integers from 0-9
-    function generateIndexes
-                            (                       
-                                address account         
+    function generateIndexes(
+                                address account
                             )
                             internal
-                            returns(uint8[3])
+                            returns(uint8[3] memory)
     {
         uint8[3] memory indexes;
         indexes[0] = getRandomIndex(account);
