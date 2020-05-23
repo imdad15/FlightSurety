@@ -38,12 +38,12 @@ contract FlightSuretyApp {
     // }
     // mapping (bytes32 => Flight) private flights;
     mapping (address => uint8) private needConsensus; // mapping of airline address to number of votes added for consensus.
- 
-    address[] private participatingAirlines;
-    address[] private addedAirlines;
+
+    uint private participatingAirlineCount = 0;
 
     FlightSuretyData flightSuretyData;
- 
+    address dataContractAddress;
+
     /********************************************************************************************/
     /*                                       FUNCTION MODIFIERS                                 */
     /********************************************************************************************/
@@ -71,20 +71,44 @@ contract FlightSuretyApp {
     }
 
     /**
-    * Modifier that requires the "Airline" to be added in the list to participate later
+    * Modifier that requires the "Airline" to be not already registered.
     */
-    modifier requireIsNotAdded(address airlineAddress) {
-        require(!flightSuretyData.isAdded(airlineAddress), "Airlines is already added");
+    modifier requireIsNotRegistered(address airlineAddress) {
+        require(!flightSuretyData.isRegistered(airlineAddress), "Airlines is already added");
         _;
     }
 
     /**
-    * Modifier that requires the "Airline" to have paid 10 Ethers to be participant
+    * Modifier that requires the "Airline" to be not already registered.
     */
-    modifier requireCallerIsParticipant() {
-        require(flightSuretyData.isRegistered(msg.sender), "Caller is not registered to participate");
+    modifier requireIsRegistered() {
+        require(flightSuretyData.isRegistered(msg.sender), "Airlines is not registered");
         _;
     }
+
+    /**
+    * Modifier that requires caller "Airline" to be a stakeholder.
+    */
+    modifier requireIsStakeholder() {
+        require(flightSuretyData.hasStakes(msg.sender), "Airlines is a stakeholder");
+        _;
+    }
+
+
+    /**
+    * Modifier that requires the "Airline" to be not a stakeholder.
+    */
+    modifier requireIsNotStakeholder() {
+        require(!flightSuretyData.hasStakes(msg.sender), "Airlines is a stakeholder already");
+        _;
+    }
+
+    // /**
+    // * Modifier that requires the "Airline" to have paid 10 Ethers to be participant
+    // */
+    // modifier requireCallerIsStakeholder() {
+
+    // }
 
     /********************************************************************************************/
     /*                                       CONSTRUCTOR                                        */
@@ -97,6 +121,8 @@ contract FlightSuretyApp {
     constructor(address _dataContractAddress) public {
         contractOwner = msg.sender;
         flightSuretyData = FlightSuretyData(_dataContractAddress);
+        dataContractAddress = _dataContractAddress;
+        participatingAirlineCount = 1;
     }
 
     /********************************************************************************************/
@@ -116,36 +142,35 @@ contract FlightSuretyApp {
 
 
     /**
-    * Add an airline to the registration queue
+    * Register an airline to the queue for consensus
     *
     */
-    function addAirline()//address airlineAddress)
+    function registerAirline(address airlineAddress)
     external
-    //requireIsNotAdded(airlineAddress)
-    requireCallerIsParticipant()
-    returns(bool success, uint8 votes) {
-        //votes = needConsensus[airlineAddress];
-        // if(participatingAirlines.length > MIN_MULTICONSENSUS || votes < (participatingAirlines.length/2) ){
-        //     needConsensus[airlineAddress] = votes + 1;
-        //     success = false;
-        // } else {
-        //     flightSuretyData.addAirline(airlineAddress);
-        //     success = true;
-        // }
-        return (true, 0);
+    requireIsStakeholder()
+    requireIsNotRegistered(airlineAddress)
+    returns(bool, uint8) {
+         uint8 votes = needConsensus[airlineAddress];
+          bool success = false;
+         if(participatingAirlineCount > MIN_MULTICONSENSUS && votes < (participatingAirlineCount/2) ){
+             needConsensus[airlineAddress] = votes + 1;
+             votes = votes + 1;
+         } else {
+            flightSuretyData.registerAirline(airlineAddress);
+            success = true;
+        }
+        return (success, votes);
     }
 
-   /**
-    * Enable an airline to participate in contract
-    *
-    */
-    function registerAirline()//address airlineAddress)
+    function addStake()
     external
-    returns(bool success, uint256 votes) {
-
-        return (success, 0);
+    payable
+    requireIsRegistered()
+    requireIsNotStakeholder(){
+        require(msg.value >= 10 ether, "Require 10 ether to be submitted to allow participation");
+        payable(dataContractAddress).transfer(msg.value);
+        flightSuretyData.addStake(msg.sender);
     }
-
 
    /**
     * @dev Register a future flight for insuring.
@@ -178,7 +203,7 @@ contract FlightSuretyApp {
                         (
                             address airline,
                             string calldata flight,
-                            uint256 timestamp                            
+                            uint256 timestamp
                         )
                         external
     {

@@ -22,8 +22,8 @@ contract FlightSuretyData {
     }
 
     struct Airline {
-        bool isAdded;
-        bool isParticipant;
+        bool isRegistered;
+        bool isStakeHolder;
         Flight[] flights;
     }
 
@@ -34,7 +34,6 @@ contract FlightSuretyData {
     /*                                       EVENT DEFINITIONS                                  */
     /********************************************************************************************/
 
-    event AIRLINE_ADDED(address airlineID);
     event AIRLINE_REGISTERED(address airlineID);
 
     /********************************************************************************************/
@@ -74,8 +73,9 @@ contract FlightSuretyData {
      /**
     * Modifier that requires the function caller to be from list of authorised accounts
     */
-    modifier requireAirlineIsAdded() {
-        require(airlines[msg.sender].isAdded == true, 'The caller is not authorized');
+    modifier requireIsStakeholder() {
+        require(airlines[msg.sender].isStakeHolder == true, 'The caller is not authorized');
+
         _;
     }
 
@@ -86,16 +86,18 @@ contract FlightSuretyData {
    
     /**
     * Constructor
-    * The creater of the contract will be initially registered as authorised caller
+    * The deploying account will be initially registered as authorised caller
     * The deploying account becomes contractOwner
+    *
+    * The deploying account will register the first airline.
     */
-    constructor()//address airlineAddress)
+    constructor(address airlineAddress)
     public {
         contractOwner = msg.sender;
         authorisedCallers[msg.sender] = true;
         
-        // airlines[airlineAddress].isAdded = true;
-        // airlines[airlineAddress].isParticipant = true;
+        airlines[airlineAddress].isRegistered = true;
+        airlines[airlineAddress].isStakeHolder = true;
     }
 
     /********************************************************************************************/
@@ -147,54 +149,51 @@ contract FlightSuretyData {
     }
 
    /**
-    * Add an airline.
+    * Register an airline.
     * Can only be called from FlightSuretyApp contract
     */
-    function addAirline(address airlineAddress)
+    function registerAirline(address airlineAddress)
     external
-    requireIsOperational()
-    requireIsAuthorisedCaller() {
+    requireIsOperational(){
         //airlines[airlineAddress].airlineName = airlineName;
-        airlines[airlineAddress].isAdded = true;
+        airlines[airlineAddress].isRegistered = true;
     }
 
     /**
     * Check if airline is Added, i.e. Airline is added, but not participating yet.
     * Can only be called from FlightSuretyApp contract
     */
-    function isAdded(address airlineAddress)
-    external
-    view
-    requireIsOperational()
-    requireIsAuthorisedCaller() 
-    returns (bool) {
-        return airlines[airlineAddress].isAdded;
-    }
-
-
-    /**
-    * Register an airline.
-    * Can only be called from FlightSuretyApp contract
-    */
-    function registerAirline(address airlineAddress)
-    external
-    requireIsOperational()
-    requireIsAuthorisedCaller() {
-        airlines[airlineAddress].isParticipant = true;
-    }
-
-
-    /**
-    * Check if airline is Registered, i.e. Airline satisfies requirement to be participant
-    * Can only be called from FlightSuretyApp contract
-    */
     function isRegistered(address airlineAddress)
     external
     view
-    requireIsOperational()
-    requireIsAuthorisedCaller() 
+    requireIsOperational() 
     returns (bool) {
-        return airlines[airlineAddress].isParticipant;
+        return airlines[airlineAddress].isRegistered;
+    }
+
+
+    /**
+    * Enable the airline to participate once they have put in their required stakes.
+    * Can only be called from FlightSuretyApp contract
+    */
+    function addStake(address airlineAddress)
+    external
+    requireIsOperational() {
+        airlines[airlineAddress].isStakeHolder = true;
+    }
+
+
+    /**
+    * Check if airline has stakes, i.e. Airline satisfies requirement to be participant
+    * Can only be called from FlightSuretyApp contract
+    */
+    function hasStakes(address airlineAddress)
+    external
+    view
+    requireIsOperational() 
+    returns (bool) {
+        
+        return airlines[airlineAddress].isStakeHolder;
     }
 
 
