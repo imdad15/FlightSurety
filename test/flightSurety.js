@@ -5,6 +5,9 @@ const Web3 = require('web3');
 
 contract('Flight Surety Tests', async (accounts) => {
     var config;
+    const secondAirline = accounts[2];
+    const thirdAirline = accounts[3];
+    
     before('setup contract', async () => {
         config = await Test.Config(accounts);
         await config.flightSuretyData.authorizeCaller(config.flightSuretyApp.address);
@@ -62,22 +65,20 @@ contract('Flight Surety Tests', async (accounts) => {
     });
 
     it("(airline) can register another airline", async () => {
-        const newAirline = accounts[2];
         try {
-            await config.flightSuretyApp.registerAirline(newAirline, { from: config.firstAirline });
+            await config.flightSuretyApp.registerAirline(secondAirline, { from: config.firstAirline });
         } catch(e) {
         }
-        const isRegistered = await config.flightSuretyData.isRegistered.call(newAirline);
+        const isRegistered = await config.flightSuretyData.isRegistered.call(secondAirline);
         assert.equal( isRegistered, true, "Registered airline failed to add new airline");
     });
 
     it('(airline) cannot register an Airline using registerAirline() if it is not funded', async () => {
         // ARRANGE
-        const newAirline = accounts[3];
         let accessDenied = false;
         // ACT
         try {
-            await config.flightSuretyApp.registerAirline(newAirline, {from: accounts[2]});
+            await config.flightSuretyApp.registerAirline(thirdAirline, {from: secondAirline});
         }
         catch(e) {
             accessDenied = true;
@@ -86,40 +87,42 @@ contract('Flight Surety Tests', async (accounts) => {
     });
  
     it('(airline) should be able to add stakes once it is registered', async () => {
-        
-        const secondAirline = accounts[2];
-        const thirdAirline = accounts[3]; 
 
         try {
-            await config.flightSuretyApp.addStake({from: secondAirline, value: Web3.utils.toWei('11', "ether"), gasPrice: 0});
-            //await config.flightSuretyApp.addStake({from: accounts[3], value: Web3.utils.toWei('10', "ether"), gasPrice: 0});
+            await config.flightSuretyApp.addStake({from: secondAirline, value: Web3.utils.toWei('10', "ether"), gasPrice: 0});
         }
         catch(e) {
-            console.log(`ex - ${JSON.stringify(e)}`);
         }
         const secondAirlineStake = await config.flightSuretyData.hasStakes.call(secondAirline); 
-        //let isStakeholder3 = await config.flightSuretyData.hasStakes.call(thirdAirline); 
+       
         assert.equal(secondAirlineStake, true, "Airline should be able to add stakes once it has been registered");
     });
 
 
-    // it('Adding a new (airline) will require consensus of at least 50% reigstered airlines,once 4 or more airlines are registered', async () => {
+    it('Adding a new (airline) will require consensus of at least 50% reigstered airlines,once 4 or more airlines are registered', async () => {
         
-    //     // ARRANGE
-    //     const fourthAirline = accounts[4];
-    //     const fifthAirline = accounts[5];
+        // ARRANGE
+        const fourthAirline = accounts[4];
+        const fifthAirline = accounts[5];
 
-    //     // ACT
-    //     try {
-    //         await config.flightSuretyApp.registerAirline(newAirline, {from: accounts[2]});
-    //     }
-    //     catch(e) {
-    //     }
-    //     let result = await config.flightSuretyData.isRegistered.call(newAirline); 
+        // register third airline
+        await config.flightSuretyApp.registerAirline(thirdAirline, {from: secondAirline});
+        await config.flightSuretyApp.addStake({from: thirdAirline, value: Web3.utils.toWei('10', "ether"), gasPrice: 0});
 
-    //     // ASSERT
-    //     assert.equal(result, false, "Airline should not be able to register another airline if it hasn't provided funding");
-    // });
+        //  register fourth airline
+        await config.flightSuretyApp.registerAirline(fourthAirline, {from: secondAirline});
+        await config.flightSuretyApp.addStake({from: fourthAirline, value: Web3.utils.toWei('10', "ether"), gasPrice: 0});
+
+        //register fifth airline. It shouldnt register until multiconsensus is reached
+        await config.flightSuretyApp.registerAirline(fifthAirline, {from: secondAirline});
+        let isRegistered = await config.flightSuretyData.isRegistered.call(fifthAirline); 
+        // ASSERT
+        assert.equal(isRegistered, false, "Airline should not be registered until multiconsesus has reached");
+
+        await config.flightSuretyApp.registerAirline(fifthAirline, {from: thirdAirline});
+        isRegistered = await config.flightSuretyData.isRegistered.call(fifthAirline); 
+        assert.equal(isRegistered, true, "Airline should be registered as multiconsesus has reached");
+    });
 
 
 });

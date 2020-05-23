@@ -193,9 +193,9 @@ contract FlightSuretyData {
     view
     requireIsOperational() 
     returns (bool) {
-        
         return airlines[airlineAddress].isStakeHolder;
     }
+
 
     /**
     * Buy insurance for a flight

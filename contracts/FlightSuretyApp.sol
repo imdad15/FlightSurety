@@ -90,7 +90,7 @@ contract FlightSuretyApp {
     * Modifier that requires caller "Airline" to be a stakeholder.
     */
     modifier requireIsStakeholder() {
-        require(flightSuretyData.hasStakes(msg.sender), "Airlines is a stakeholder");
+        require(flightSuretyData.hasStakes(msg.sender), "Airline is a stakeholder");
         _;
     }
 
@@ -99,7 +99,7 @@ contract FlightSuretyApp {
     * Modifier that requires the "Airline" to be not a stakeholder.
     */
     modifier requireIsNotStakeholder() {
-        require(!flightSuretyData.hasStakes(msg.sender), "Airlines is a stakeholder already");
+        require(!flightSuretyData.hasStakes(msg.sender), "Airline is not a stakeholder");
         _;
     }
 
@@ -150,12 +150,10 @@ contract FlightSuretyApp {
     requireIsStakeholder()
     requireIsNotRegistered(airlineAddress)
     returns(bool, uint8) {
-         uint8 votes = needConsensus[airlineAddress];
-          bool success = false;
-         if(participatingAirlineCount > MIN_MULTICONSENSUS && votes < (participatingAirlineCount/2) ){
-             needConsensus[airlineAddress] = votes + 1;
-             votes = votes + 1;
-         } else {
+        needConsensus[airlineAddress] = needConsensus[airlineAddress] + 1;
+        uint8 votes = needConsensus[airlineAddress];
+        bool success = false;
+        if(!(participatingAirlineCount >= MIN_MULTICONSENSUS && votes < (participatingAirlineCount/2))){
             flightSuretyData.registerAirline(airlineAddress);
             success = true;
         }
@@ -166,9 +164,10 @@ contract FlightSuretyApp {
     external
     payable
     requireIsRegistered()
-    requireIsNotStakeholder(){
+    requireIsNotStakeholder() {
         require(msg.value >= 10 ether, "Require 10 ether to be submitted to allow participation");
         flightSuretyData.addStake.value(msg.value)(msg.sender);
+        participatingAirlineCount = participatingAirlineCount + 1;
     }
 
    /**
