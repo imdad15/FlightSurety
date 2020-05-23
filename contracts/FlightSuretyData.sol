@@ -178,6 +178,7 @@ contract FlightSuretyData {
     */
     function addStake(address airlineAddress)
     external
+    payable
     requireIsOperational() {
         airlines[airlineAddress].isStakeHolder = true;
     }
@@ -195,7 +196,6 @@ contract FlightSuretyData {
         
         return airlines[airlineAddress].isStakeHolder;
     }
-
 
     /**
     * Buy insurance for a flight

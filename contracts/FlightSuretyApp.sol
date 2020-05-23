@@ -168,8 +168,7 @@ contract FlightSuretyApp {
     requireIsRegistered()
     requireIsNotStakeholder(){
         require(msg.value >= 10 ether, "Require 10 ether to be submitted to allow participation");
-        payable(dataContractAddress).transfer(msg.value);
-        flightSuretyData.addStake(msg.sender);
+        flightSuretyData.addStake.value(msg.value)(msg.sender);
     }
 
    /**
@@ -180,11 +179,11 @@ contract FlightSuretyApp {
     external {
 
     }
-    
+
    /**
     * @dev Called after oracle has updated flight status
     *
-    */  
+    */
     function processFlightStatus
                                 (
                                     address airline,
@@ -217,13 +216,13 @@ contract FlightSuretyApp {
                                             });
 
         emit OracleRequest(index, airline, flight, timestamp);
-    } 
+    }
 
 
 // region ORACLE MANAGEMENT
 
     // Incremented to add pseudo-randomness at various points
-    uint8 private nonce = 0;    
+    uint8 private nonce = 0;
 
     // Fee to be paid when registering oracle
     uint256 public constant REGISTRATION_FEE = 1 ether;
