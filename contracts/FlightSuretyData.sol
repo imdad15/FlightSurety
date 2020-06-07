@@ -15,19 +15,25 @@ contract FlightSuretyData {
 
 
     struct Flight {
-        bool isRegistered;
-        uint8 statusCode;
-        uint256 updatedTimestamp;
+        string flightName;
         address airline;
+        uint8 statusCode;
+        uint256 timestamp;
     }
 
     struct Airline {
         bool isRegistered;
         bool isStakeHolder;
-        Flight[] flights;
+    }
+
+    struct Insurance {
+        address passengerID;
+        uint8 value;
     }
 
     mapping (address => Airline) private airlines;
+    mapping (bytes32 => Flight) private flights;
+    mapping (bytes32 => Insurance) private insurances; 
     mapping (address => bool) private authorisedCallers;
 
     /********************************************************************************************/
@@ -198,13 +204,46 @@ contract FlightSuretyData {
 
 
     /**
-    * Buy insurance for a flight
-    *
+    * Register a flight
     */
-    function buy ()
+    function registerFlight( 
+                                address airline,
+                                string calldata flightName,
+                                uint256 timestamp
+                            )
+    external {
+        bytes32 flightKey =getFlightKey(airline, flightName, timestamp);
+        flights[flightKey].flightName = flightName;   
+        flights[flightKey].airline = airline;
+        flights[flightKey].statusCode = 0;
+        flights[flightKey].timestamp = timestamp;
+    } 
+
+    /**
+    * Update a flight status
+    */
+    function updateFlightStatus( 
+                                address airline,
+                                string calldata flightName,
+                                uint256 timestamp,
+                                uint8 statusCode
+                            )
+    external {
+        bytes32 flightKey =getFlightKey(airline, flightName, timestamp);
+        require(flights[flightKey].airline == airline, "Only flight owning airline can change a flights status");
+        flights[flightKey].statusCode = statusCode;
+    } 
+
+    /**
+    * Buy insurance for a flight
+    */
+    function buyInsurance (
+                            address airline,
+                            string calldata flight 
+                        )
     external
     payable {
-
+        
     }
 
     /**
@@ -241,6 +280,9 @@ contract FlightSuretyData {
     {
     }
 
+    /**
+    * Create flight key
+    */
     function getFlightKey(
                             address airline,
                             string memory flight,

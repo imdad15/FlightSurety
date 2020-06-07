@@ -30,13 +30,6 @@ contract FlightSuretyApp {
 
     address private contractOwner;                      // account used to deploy contract.
 
-    // struct Flight {
-    //     bool isRegistered;
-    //     uint8 statusCode;
-    //     uint256 updatedTimestamp;
-    //     address airline;
-    // }
-    // mapping (bytes32 => Flight) private flights;
     mapping (address => uint8) private needConsensus; // mapping of airline address to number of votes added for consensus.
 
     uint private participatingAirlineCount = 0;
@@ -90,7 +83,7 @@ contract FlightSuretyApp {
     * Modifier that requires caller "Airline" to be a stakeholder.
     */
     modifier requireIsStakeholder() {
-        require(flightSuretyData.hasStakes(msg.sender), "Airline is a stakeholder");
+        require(flightSuretyData.hasStakes(msg.sender), "Airline is not a stakeholder");
         _;
     }
 
@@ -99,7 +92,7 @@ contract FlightSuretyApp {
     * Modifier that requires the "Airline" to be not a stakeholder.
     */
     modifier requireIsNotStakeholder() {
-        require(!flightSuretyData.hasStakes(msg.sender), "Airline is not a stakeholder");
+        require(!flightSuretyData.hasStakes(msg.sender), "Airline is a stakeholder");
         _;
     }
 
@@ -160,6 +153,10 @@ contract FlightSuretyApp {
         return (success, votes);
     }
 
+    /**
+    * Add 10 ethers to add stake in for registered airline
+    */
+
     function addStake()
     external
     payable
@@ -171,28 +168,30 @@ contract FlightSuretyApp {
     }
 
    /**
-    * @dev Register a future flight for insuring.
+    * Register a future flight for insuring.
     *
     */
-    function registerFlight ()
+    function registerFlight (
+                                address airline,
+                                string calldata flight,
+                                uint256 timestamp
+                            )
     external {
-
+        flightSuretyData.registerFlight(airline, flight, timestamp);
     }
 
    /**
-    * @dev Called after oracle has updated flight status
+    * Called after oracle has updated flight status
     *
     */
-    function processFlightStatus
-                                (
+    function processFlightStatus(
                                     address airline,
                                     string memory flight,
                                     uint256 timestamp,
                                     uint8 statusCode
                                 )
-                                internal
-                                pure
-    {
+    internal {
+        flightSuretyData.updateFlightStatus(airline, flight, timestamp, statusCode);
     }
 
 
@@ -203,8 +202,7 @@ contract FlightSuretyApp {
                             string calldata flight,
                             uint256 timestamp
                         )
-                        external
-    {
+    external {
         uint8 index = getRandomIndex(msg.sender);
 
         // Generate a unique key for storing the request
@@ -232,7 +230,7 @@ contract FlightSuretyApp {
 
     struct Oracle {
         bool isRegistered;
-        uint8[3] indexes;        
+        uint8[3] indexes;
     }
 
     // Track all registered oracles
@@ -263,32 +261,23 @@ contract FlightSuretyApp {
 
 
     // Register an oracle with the contract
-    function registerOracle
-                            (
-                            )
-                            external
-                            payable
-    {
+    function registerOracle ()
+    external
+    payable {
         // Require registration fee
         require(msg.value >= REGISTRATION_FEE, "Registration fee is required");
-
         uint8[3] memory indexes = generateIndexes(msg.sender);
-
         oracles[msg.sender] = Oracle({
                                         isRegistered: true,
                                         indexes: indexes
                                     });
     }
 
-    function getMyIndexes
-                            (
-                            )
-                            external
-                            view
-                            returns(uint8[3] memory)
-    {
+    function getMyIndexes ()
+    external
+    view
+    returns(uint8[3] memory) {
         require(oracles[msg.sender].isRegistered, "Not registered as an oracle");
-
         return oracles[msg.sender].indexes;
     }
 
@@ -312,7 +301,7 @@ contract FlightSuretyApp {
         require((oracles[msg.sender].indexes[0] == index) || (oracles[msg.sender].indexes[1] == index) || (oracles[msg.sender].indexes[2] == index), "Index does not match oracle request");
 
 
-        bytes32 key = keccak256(abi.encodePacked(index, airline, flight, timestamp)); 
+        bytes32 key = keccak256(abi.encodePacked(index, airline, flight, timestamp));
         require(oracleResponses[key].isOpen, "Flight or timestamp do not match oracle request");
 
         oracleResponses[key].responses[statusCode].push(msg.sender);
@@ -367,13 +356,9 @@ contract FlightSuretyApp {
     }
 
     // Returns array of three non-duplicating integers from 0-9
-    function getRandomIndex
-                            (
-                                address account
-                            )
-                            internal
-                            returns (uint8)
-    {
+    function getRandomIndex (address account)
+    internal
+    returns (uint8) {
         uint8 maxValue = 10;
 
         // Pseudo random number...the incrementing nonce adds variation
@@ -382,7 +367,6 @@ contract FlightSuretyApp {
         if (nonce > 250) {
             nonce = 0;  // Can only fetch blockhashes for last 256 blocks so we adapt
         }
-
         return random;
     }
 

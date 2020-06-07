@@ -12,7 +12,7 @@ contract('Oracles', async (accounts) => {
     // Watch contract events
     const STATUS_CODE_UNKNOWN = 0;
     const STATUS_CODE_ON_TIME = 10;
-    const STATUS_CODE_LATE_AIRLINE = 20;
+    const STATUS_CODE_LATE_FLIGHT = 20;
     const STATUS_CODE_LATE_WEATHER = 30;
     const STATUS_CODE_LATE_TECHNICAL = 40;
     const STATUS_CODE_LATE_OTHER = 50;
@@ -36,7 +36,7 @@ contract('Oracles', async (accounts) => {
   it('can request flight status', async () => {
     
     // ARRANGE
-    let flight = 'ND1309'; // Course number
+    let flight = 'ZS410'; // Random flight name
     let timestamp = Math.floor(Date.now() / 1000);
 
     // Submit a request for oracles to get status information for a flight

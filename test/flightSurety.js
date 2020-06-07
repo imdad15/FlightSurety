@@ -124,5 +124,25 @@ contract('Flight Surety Tests', async (accounts) => {
         assert.equal(isRegistered, true, "Airline should be registered as multiconsesus has reached");
     });
 
+    it('(flights) can be registered and retrieved', async () => {
+        const firstFlight = 'ZS410';
+
+        const timestamp = Math.floor(Date.now() / 1000);
+        var error = false;
+
+        try {
+            await config.flightSuretyApp.registerFlight(config.firstAirline ,firstFlight,timestamp);
+        }
+        catch(e) {
+            error = true;
+        }
+
+        assert.equal(error, false, "Flights should be allowed to be registerd by participating airlines")
+
+        const oracleEvent = await config.flightSuretyApp.fetchFlightStatus(config.firstAirline, firstFlight, timestamp);
+        assert.equal(oracleEvent.logs[0].event, 'OracleRequest', 'OracleRequest event failed');
+
+    });
+
 
 });
