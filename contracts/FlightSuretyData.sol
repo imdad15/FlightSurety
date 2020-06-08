@@ -27,13 +27,15 @@ contract FlightSuretyData {
     }
 
     struct Insurance {
-        address passengerID;
-        uint8 value;
+        address passenger;
+        uint256 insuranceAmount;
     }
 
     mapping (address => Airline) private airlines;
     mapping (bytes32 => Flight) private flights;
-    mapping (bytes32 => Insurance) private insurances; 
+    mapping (bytes32 => Insurance[]) private insurances;
+    mapping (address => uint256) withdrawableCredits;
+
     mapping (address => bool) private authorisedCallers;
 
     /********************************************************************************************/
@@ -238,46 +240,52 @@ contract FlightSuretyData {
     * Buy insurance for a flight
     */
     function buyInsurance (
+                            address passenger,
+                            uint256 insuranceAmount,
                             address airline,
-                            string calldata flight 
+                            string calldata flight
                         )
     external
     payable {
-        
-    }
-
-    /**
-    * Credits payouts to insurees
-    */
-    function creditInsurees ()
-    external
-    pure {
-    }
-    
+        insurances[getInsuranceKey(airline, flight)].push(
+            Insurance({
+                insuranceAmount: insuranceAmount,
+                passenger: passenger
+            })
+        );
+    }          
 
     /**
     * Transfers eligible payout funds to insuree
-    *
     */
-    function pay
-                            (
-                            )
-                            external
-                            pure
-    {
+    function creditInsurees (address airline, string calldata flight, uint8 multiplier, uint8 divider)
+    external {
+        bytes32 insuranceKey = getInsuranceKey(airline, flight);
+        Insurance[] memory addToWithdraw = insurances[insuranceKey];
+ 
+        for (uint x=0; x < addToWithdraw.length; x++){
+            address passengerToCredit = addToWithdraw[x].passenger;
+            uint256 currentBalance = withdrawableCredits[passengerToCredit];
+            uint256 toPay = addToWithdraw[x].insuranceAmount.mul(multiplier).div(divider);
+            withdrawableCredits[passengerToCredit] = currentBalance.add(toPay); 
+        }
+
+        delete insurances[insuranceKey];
     }
+    
 
     /**
     * Initial funding for the insurance. Unless there are too many delayed flights
     *      resulting in insurance payouts, the contract should be self-sustaining
     *
     */   
-    function fund
-                            (
-                            )
-                            public
-                            payable
-    {
+    function withdrawCredits(address passenger)
+    public
+    payable {
+        uint256 transferAmount = withdrawableCredits[passenger];
+        require(transferAmount > 0, "No withdrawable amount available"); 
+        withdrawableCredits[passenger] = 0;
+        payable(passenger).transfer(transferAmount);
     }
 
     /**
@@ -289,9 +297,24 @@ contract FlightSuretyData {
                             uint256 timestamp
                         )
     internal
+    pure
     returns(bytes32) {
         return keccak256(abi.encodePacked(airline, flight, timestamp));
     }
+
+     /**
+    * Create insurance key
+    */
+    function getInsuranceKey(
+                            address airline,
+                            string memory flight
+                        )
+    internal
+    pure
+    returns(bytes32) {
+        return keccak256(abi.encodePacked(airline, flight));
+    }
+
 
     /**
     * Fallback function for funding smart contract.
@@ -299,7 +322,6 @@ contract FlightSuretyData {
     */
     fallback()
     external {
-        fund();
     }
 }
 

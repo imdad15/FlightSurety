@@ -28,6 +28,9 @@ contract FlightSuretyApp {
 
     uint8 constant private MIN_MULTICONSENSUS = 4;      // number of airlines required for multi-consesus [4].
 
+    uint8 constant private CREDIT_MULITPLIER = 15;
+    uint8 constant private CREDIT_DIVIDER = 10;
+
     address private contractOwner;                      // account used to deploy contract.
 
     mapping (address => uint8) private needConsensus; // mapping of airline address to number of votes added for consensus.
@@ -192,6 +195,9 @@ contract FlightSuretyApp {
                                 )
     internal {
         flightSuretyData.updateFlightStatus(airline, flight, timestamp, statusCode);
+        if(statusCode == STATUS_CODE_LATE_FLIGHT){
+             flightSuretyData.creditInsurees(airline, flight, CREDIT_MULITPLIER, CREDIT_DIVIDER);
+        }
     }
 
 
@@ -213,6 +219,22 @@ contract FlightSuretyApp {
                                             });
 
         emit OracleRequest(index, airline, flight, timestamp);
+    }
+
+    function buyInsurance(
+                            address airline,
+                            string calldata flight
+                        )
+    external
+    payable {
+        require(msg.value <= 1 ether, "Insurance amount should be less than a ether");
+        flightSuretyData.buyInsurance(msg.sender, msg.value, airline, flight);
+        payable(address(flightSuretyData)).transfer(msg.value);//(msg.sender);
+    }
+
+    function withdrawCredits()
+    external {
+        flightSuretyData.withdrawCredits(msg.sender);
     }
 
 
@@ -296,9 +318,9 @@ contract FlightSuretyApp {
                             uint256 timestamp,
                             uint8 statusCode
                         )
-                        external
-    {
-        require((oracles[msg.sender].indexes[0] == index) || (oracles[msg.sender].indexes[1] == index) || (oracles[msg.sender].indexes[2] == index), "Index does not match oracle request");
+    external {
+        require((oracles[msg.sender].indexes[0] == index) || (oracles[msg.sender].indexes[1] == index)
+                || (oracles[msg.sender].indexes[2] == index), "Index does not match oracle request");
 
 
         bytes32 key = keccak256(abi.encodePacked(index, airline, flight, timestamp));
@@ -325,10 +347,9 @@ contract FlightSuretyApp {
                             string memory flight,
                             uint256 timestamp
                         )
-                        pure
-                        internal
-                        returns(bytes32)
-    {
+    internal
+    pure
+    returns(bytes32) {
         return keccak256(abi.encodePacked(airline, flight, timestamp));
     }
 
@@ -341,7 +362,7 @@ contract FlightSuretyApp {
     {
         uint8[3] memory indexes;
         indexes[0] = getRandomIndex(account);
-        
+
         indexes[1] = indexes[0];
         while(indexes[1] == indexes[0]) {
             indexes[1] = getRandomIndex(account);

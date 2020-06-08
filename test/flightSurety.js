@@ -7,6 +7,7 @@ contract('Flight Surety Tests', async (accounts) => {
     var config;
     const secondAirline = accounts[2];
     const thirdAirline = accounts[3];
+    const flight = 'ZS410';
     
     before('setup contract', async () => {
         config = await Test.Config(accounts);
@@ -125,13 +126,12 @@ contract('Flight Surety Tests', async (accounts) => {
     });
 
     it('(flights) can be registered and retrieved', async () => {
-        const firstFlight = 'ZS410';
 
         const timestamp = Math.floor(Date.now() / 1000);
         var error = false;
 
         try {
-            await config.flightSuretyApp.registerFlight(config.firstAirline ,firstFlight,timestamp);
+            await config.flightSuretyApp.registerFlight(config.firstAirline ,flight,timestamp);
         }
         catch(e) {
             error = true;
@@ -139,10 +139,35 @@ contract('Flight Surety Tests', async (accounts) => {
 
         assert.equal(error, false, "Flights should be allowed to be registerd by participating airlines")
 
-        const oracleEvent = await config.flightSuretyApp.fetchFlightStatus(config.firstAirline, firstFlight, timestamp);
+        const oracleEvent = await config.flightSuretyApp.fetchFlightStatus(config.firstAirline, flight, timestamp);
         assert.equal(oracleEvent.logs[0].event, 'OracleRequest', 'OracleRequest event failed');
 
     });
 
+    it('(passenger) may pay up to 1 ether to buy insurance', async () => {
+        const insuranceAmount = Web3.utils.toWei('1', "ether")
+        const balancePreTransaction = await web3.eth.getBalance(accounts[6]);
+        try {
+        await config.flightSuretyApp.buyInsurance(config.firstAirline, flight, {from : accounts[6], value: insuranceAmount, gasPrice: 0});
+        } catch(e){
+            //console.log(`error - ${balancePreTransaction}`);
+        }
+        const balancePostTransaction = await web3.eth.getBalance(accounts[6]);
+        //console.log(`error - ${balancePostTransaction}`);
+
+        assert.equal(insuranceAmount ,balancePreTransaction-balancePostTransaction, 'Incorrect amount deducted in transaction');
+    });
+
+    it('eligible (passenger) should be able to withdraw credits', async () => {
+
+        // first credit the amount to passenger address
+        await config.flightSuretyData.creditInsurees(config.firstAirline, flight, 15, 10);
+
+        const withdrawAmount = Web3.utils.toWei('1.5', "ether");
+        const balancePreTransaction = await web3.eth.getBalance(accounts[6]);
+        await config.flightSuretyApp.withdrawCredits({from : accounts[6], value: withdrawAmount, gasPrice: 0});
+        const balancePostTransaction = await web3.eth.getBalance(accounts[6]);
+        assert.equal(insuranceAmount ,balancePostTransaction- balancePreTransaction, 'Incorrect amount withdrawn in transaction');
+    });
 
 });
