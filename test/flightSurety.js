@@ -165,9 +165,9 @@ contract('Flight Surety Tests', async (accounts) => {
 
         const withdrawAmount = Web3.utils.toWei('1.5', "ether");
         const balancePreTransaction = await web3.eth.getBalance(accounts[6]);
-        await config.flightSuretyApp.withdrawCredits({from : accounts[6], value: withdrawAmount, gasPrice: 0});
+        await config.flightSuretyApp.withdrawCredits({from : accounts[6], gasPrice: 0});
         const balancePostTransaction = await web3.eth.getBalance(accounts[6]);
-        assert.equal(insuranceAmount ,balancePostTransaction- balancePreTransaction, 'Incorrect amount withdrawn in transaction');
+        assert.equal(withdrawAmount ,balancePostTransaction- balancePreTransaction, 'Incorrect amount withdrawn in transaction');
     });
 
 });
