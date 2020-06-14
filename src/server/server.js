@@ -13,11 +13,13 @@ const STATUS_CODES = [0, 10, 20, 30, 40, 50];
 
 web3.eth.getAccounts((error, accounts) => {
   for(let a = 0; a < oraclesCount; a++) {
-    flightSuretyApp.methods.registerOracle().send({from: accounts[a], value: web3.utils.toWei("1",'ether'), gas: 9999999}, (error, result) => {
-      flightSuretyApp.methods.getMyIndexes().call({from: accounts[a]}, (error, indexes) => {
-        const statusCode = STATUS_CODES[Math.floor(Math.random() * STATUS_CODES.length)];
-        console.log(`indexes- ${JSON.stringify(indexes)}`)
-        const oracle = {address: accounts[a], indexes: indexes, statusCode: statusCode};
+    flightSuretyApp.methods.registerOracle().send({from: accounts[a], value: web3.utils.toWei("1",'ether'),  gas: 3000000})
+    .catch((error) => console.log(`Error- ${error}`))
+    .then((result) => {
+      flightSuretyApp.methods.getMyIndexes().call({from: accounts[a],  gas: 3000000})
+      .catch((error) => console.log(`Error- ${error}`))
+      .then((indexes) => {
+        const oracle = {address: accounts[a], indexes: indexes};
         oracles.push(oracle);
         console.log("ORACLE REGISTERED: " + JSON.stringify(oracle));
       });
@@ -27,17 +29,19 @@ web3.eth.getAccounts((error, accounts) => {
 
 flightSuretyApp.events.OracleRequest({fromBlock: 0}, function (error, event) {
   const {returnValues} = event;
+  if(!returnValues){
+    return console.log(`No return value in event`);
+  }
+  const statusCode = STATUS_CODES[Math.floor(Math.random() * STATUS_CODES.length)];
     let index = returnValues.index;
-    for(let a = 0; a < oracles.length; a++) {
-      console.log(`oracleReq- ${JSON.stringify(oracles[a])}`);
-
-      // if(oracles[a].indexes.includes(index)) {
-      //   flightSuretyApp.methods.submitOracleResponse(index, returnValues.airline, returnValues.flight, returnValues.timestamp, oracles[a].statusCode)
-      //   .send({from: oracles[a].address, gas: 9999999}, (error, result) => {
-      //     console.log("FROM " + JSON.stringify(oracles[a]) + "STATUS CODE: " + statusCode);
-      //   });
-      // }
-    }
+    oracles.forEach(oracle => {
+      if(oracle.indexes.includes(index)) {
+        flightSuretyApp.methods.submitOracleResponse(index, returnValues.airline, returnValues.flight, returnValues.timestamp, statusCode)
+        .send({from: oracle.address, gas: 9999999}).then((error, result) => {
+          console.log("FROM " + JSON.stringify(oracle) + "STATUS CODE: " + statusCode);
+        });
+      }
+    });
 });
 
 const app = express();
