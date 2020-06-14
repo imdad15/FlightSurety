@@ -205,26 +205,25 @@ contract FlightSuretyData {
                             )
     external {
         bytes32 flightKey =getFlightKey(airline, flightName, timestamp);
-        flights[flightKey].flightName = flightName;   
+        flights[flightKey].flightName = flightName;
         flights[flightKey].airline = airline;
         flights[flightKey].statusCode = 0;
         flights[flightKey].timestamp = timestamp;
-    } 
+    }
 
     /**
     * @dev Update a flight status
     */
-    function updateFlightStatus( 
+    function updateFlightStatus(
                                 address airline,
                                 string calldata flightName,
                                 uint256 timestamp,
                                 uint8 statusCode
                             )
     external {
-        bytes32 flightKey =getFlightKey(airline, flightName, timestamp);
-        require(flights[flightKey].airline == airline, "Only flight owning airline can change a flights status");
+        bytes32 flightKey = getFlightKey(airline, flightName, timestamp);
         flights[flightKey].statusCode = statusCode;
-    } 
+    }
 
     /**
     * @dev Buy insurance for a flight
@@ -257,7 +256,7 @@ contract FlightSuretyData {
             address passengerToCredit = addToWithdraw[x].passenger;
             uint256 currentBalance = withdrawableCredits[passengerToCredit];
             uint256 toPay = addToWithdraw[x].insuranceAmount.mul(multiplier).div(divider);
-            withdrawableCredits[passengerToCredit] = currentBalance.add(toPay); 
+            withdrawableCredits[passengerToCredit] = currentBalance.add(toPay);
         }
 
         delete insurances[insuranceKey];
