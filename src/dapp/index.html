@@ -20,10 +20,37 @@
     </nav>
 
     <main class="container">
+        <h1>Alpha Air</h1>
+
         <div id="display-wrapper" class="top-20">
         </div>
         <div class="row top-20">
-            <label class="form">Flight</label> <input type="text" id="flight-number"> <btn class="btn btn-primary" id="submit-oracle">Submit to Oracles</btn>
+            <label class="form">Flight</label> <input type="text" id="flight-number"> 
+            <btn class="btn btn-primary" id="register-flight">Register Flight</btn>
+        </div>
+
+        <div id="display-wrapper" class="top-20">
+        </div>
+        <hr />
+        <hr />
+        <div class="row top-20">
+            <label class="form">Get flight status</label>
+            <btn class="btn btn-primary" id="submit-oracle">Get status from Oracles</btn>
+        </div>
+        <div class="row top-20">
+            <label class="form">Buy insurance worth of</label>
+            <input type="text" id="insurance-value" style="margin:0; width:100px" value="0.5">&nbsp;&nbsp;ETH
+            &nbsp;
+            &nbsp;
+            <btn class="btn btn-primary" id="buy-insurance">Buy</btn>
+        </div>
+        <div class="row top-20">
+            <label class="form">Withdraw(if flight is late)</label>
+            <btn class="btn btn-primary" id="withdraw-credits">Withdraw</btn>
+        </div>
+        <div id="results-wrapper" class="top-20">
+        </div>
+        <div class="row top-20">
         </div>
     </main>
 
