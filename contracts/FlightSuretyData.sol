@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+//SPDX-License-Identifier: MIT
 pragma solidity ^0.6.0;
 
 import "../node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
@@ -37,12 +37,6 @@ contract FlightSuretyData {
     mapping (address => uint256) withdrawableCredits;
 
     mapping (address => bool) private authorisedCallers;
-
-    /********************************************************************************************/
-    /*                                       EVENT DEFINITIONS                                  */
-    /********************************************************************************************/
-
-    event AIRLINE_REGISTERED(address airlineID);
 
     /********************************************************************************************/
     /*                                       FUNCTION MODIFIERS                                 */
@@ -93,7 +87,7 @@ contract FlightSuretyData {
     /********************************************************************************************/
    
     /**
-    * Constructor
+    * @dev Constructor
     * The deploying account will be initially registered as authorised caller
     * The deploying account becomes contractOwner
     *
@@ -113,7 +107,7 @@ contract FlightSuretyData {
     /********************************************************************************************/
 
     /**
-    * Get operating status of contract
+    * @dev Get operating status of contract
     *
     * @return A bool that is the current operating status
     */
@@ -125,7 +119,7 @@ contract FlightSuretyData {
     }
 
     /**
-    * Sets contract operations on/off
+    * @dev Sets contract operations on/off
     *
     * When operational mode is disabled, all write transactions except for this one will fail
     */
@@ -140,7 +134,7 @@ contract FlightSuretyData {
     /********************************************************************************************/
 
     /**
-    * Add an authorised caller.
+    * @dev Add an authorised caller.
     * Can only be called from FlightSuretyApp contract
     */
      function authorizeCaller(address caller) external requireContractOwner {
@@ -149,7 +143,7 @@ contract FlightSuretyData {
 
 
     /**
-    * Disable authorised caller.
+    * @dev Disable authorised caller.
     * Can only be called from FlightSuretyApp contract
     */
     function deauthorizeCaller(address caller) external requireContractOwner {
@@ -157,56 +151,52 @@ contract FlightSuretyData {
     }
 
    /**
-    * Register an airline.
+    * @dev Register an airline.
     * Can only be called from FlightSuretyApp contract
     */
     function registerAirline(address airlineAddress)
-    external
-    requireIsOperational(){
+    external {
         //airlines[airlineAddress].airlineName = airlineName;
         airlines[airlineAddress].isRegistered = true;
     }
 
     /**
-    * Check if airline is Added, i.e. Airline is added, but not participating yet.
+    * @dev Check if airline is Added, i.e. Airline is added, but not participating yet.
     * Can only be called from FlightSuretyApp contract
     */
     function isRegistered(address airlineAddress)
     external
     view
-    requireIsOperational() 
     returns (bool) {
         return airlines[airlineAddress].isRegistered;
     }
 
 
     /**
-    * Enable the airline to participate once they have put in their required stakes.
+    * @dev Enable the airline to participate once they have put in their required stakes.
     * Can only be called from FlightSuretyApp contract
     */
     function addStake(address airlineAddress)
     external
-    payable
-    requireIsOperational() {
+    payable {
         airlines[airlineAddress].isStakeHolder = true;
     }
 
 
     /**
-    * Check if airline has stakes, i.e. Airline satisfies requirement to be participant
+    * @dev Check if airline has stakes, i.e. Airline satisfies requirement to be participant
     * Can only be called from FlightSuretyApp contract
     */
     function hasStakes(address airlineAddress)
     external
     view
-    requireIsOperational() 
     returns (bool) {
         return airlines[airlineAddress].isStakeHolder;
     }
 
 
     /**
-    * Register a flight
+    * @dev Register a flight
     */
     function registerFlight( 
                                 address airline,
@@ -222,7 +212,7 @@ contract FlightSuretyData {
     } 
 
     /**
-    * Update a flight status
+    * @dev Update a flight status
     */
     function updateFlightStatus( 
                                 address airline,
@@ -237,7 +227,7 @@ contract FlightSuretyData {
     } 
 
     /**
-    * Buy insurance for a flight
+    * @dev Buy insurance for a flight
     */
     function buyInsurance (
                             address passenger,
@@ -256,7 +246,7 @@ contract FlightSuretyData {
     }          
 
     /**
-    * Transfers eligible payout funds to insuree
+    * @dev Transfers eligible payout funds to insuree
     */
     function creditInsurees (address airline, string calldata flight, uint8 multiplier, uint8 divider)
     external {
@@ -275,7 +265,7 @@ contract FlightSuretyData {
     
 
     /**
-    * Initial funding for the insurance. Unless there are too many delayed flights
+    * @dev Initial funding for the insurance. Unless there are too many delayed flights
     *      resulting in insurance payouts, the contract should be self-sustaining
     *
     */   
@@ -289,7 +279,7 @@ contract FlightSuretyData {
     }
 
     /**
-    * Create flight key
+    * @dev Create flight key
     */
     function getFlightKey(
                             address airline,
@@ -302,8 +292,8 @@ contract FlightSuretyData {
         return keccak256(abi.encodePacked(airline, flight, timestamp));
     }
 
-     /**
-    * Create insurance key
+    /**
+    * @dev Create insurance key
     */
     function getInsuranceKey(
                             address airline,
@@ -315,13 +305,5 @@ contract FlightSuretyData {
         return keccak256(abi.encodePacked(airline, flight));
     }
 
-
-    /**
-    * Fallback function for funding smart contract.
-    *
-    */
-    fallback()
-    external {
-    }
 }
 

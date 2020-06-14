@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+//SPDX-License-Identifier: MIT
 pragma solidity ^0.6.0;
 
 // It's important to avoid vulnerabilities due to numeric overflow bugs
@@ -18,7 +18,7 @@ contract FlightSuretyApp {
     /*                                       DATA VARIABLES                                     */
     /********************************************************************************************/
 
-    // Flight status codees
+    // @dev Flight status codees
     uint8 private constant STATUS_CODE_UNKNOWN = 0;
     uint8 private constant STATUS_CODE_ON_TIME = 10;
     uint8 private constant STATUS_CODE_LATE_FLIGHT = 20;
@@ -143,6 +143,7 @@ contract FlightSuretyApp {
     */
     function registerAirline(address airlineAddress)
     external
+    requireIsOperational()
     requireIsStakeholder()
     requireIsNotRegistered(airlineAddress)
     returns(bool, uint8) {
@@ -163,6 +164,7 @@ contract FlightSuretyApp {
     function addStake()
     external
     payable
+    requireIsOperational()
     requireIsRegistered()
     requireIsNotStakeholder() {
         require(msg.value >= 10 ether, "Require 10 ether to be submitted to allow participation");
@@ -179,7 +181,8 @@ contract FlightSuretyApp {
                                 string calldata flight,
                                 uint256 timestamp
                             )
-    external {
+    external
+    requireIsOperational() {
         flightSuretyData.registerFlight(airline, flight, timestamp);
     }
 
@@ -193,7 +196,8 @@ contract FlightSuretyApp {
                                     uint256 timestamp,
                                     uint8 statusCode
                                 )
-    internal {
+    internal
+    requireIsOperational() {
         flightSuretyData.updateFlightStatus(airline, flight, timestamp, statusCode);
         if(statusCode == STATUS_CODE_LATE_FLIGHT){
              flightSuretyData.creditInsurees(airline, flight, CREDIT_MULITPLIER, CREDIT_DIVIDER);
@@ -208,7 +212,8 @@ contract FlightSuretyApp {
                             string calldata flight,
                             uint256 timestamp
                         )
-    external {
+    external
+    requireIsOperational() {
         uint8 index = getRandomIndex(msg.sender);
 
         // Generate a unique key for storing the request
@@ -226,14 +231,17 @@ contract FlightSuretyApp {
                             string calldata flight
                         )
     external
-    payable {
+    payable
+    requireIsOperational() {
         require(msg.value <= 1 ether, "Insurance amount should be less than a ether");
-        flightSuretyData.buyInsurance(msg.sender, msg.value, airline, flight);
-        payable(address(flightSuretyData)).transfer(msg.value);//(msg.sender);
+        flightSuretyData.buyInsurance.value(msg.value)(msg.sender, msg.value, airline, flight);
+        //payable(address(flightSuretyData)).transfer(msg.value);//(msg.sender);
     }
 
     function withdrawCredits()
-    external {
+    external
+    payable
+    requireIsOperational() {
         flightSuretyData.withdrawCredits(msg.sender);
     }
 
@@ -282,7 +290,7 @@ contract FlightSuretyApp {
     event OracleRequest(uint8 index, address airline, string flight, uint256 timestamp);
 
 
-    // Register an oracle with the contract
+    // @dev Register an oracle with the contract
     function registerOracle ()
     external
     payable {
@@ -353,7 +361,7 @@ contract FlightSuretyApp {
         return keccak256(abi.encodePacked(airline, flight, timestamp));
     }
 
-    // Returns array of three non-duplicating integers from 0-9
+    // @dev Returns array of three non-duplicating integers from 0-9
     function generateIndexes(
                                 address account
                             )
@@ -376,7 +384,7 @@ contract FlightSuretyApp {
         return indexes;
     }
 
-    // Returns array of three non-duplicating integers from 0-9
+    // @dev Returns array of three non-duplicating integers from 0-9
     function getRandomIndex (address account)
     internal
     returns (uint8) {
