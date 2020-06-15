@@ -150,7 +150,7 @@ contract FlightSuretyApp {
         needConsensus[airlineAddress] = needConsensus[airlineAddress] + 1;
         uint8 votes = needConsensus[airlineAddress];
         bool success = false;
-        if(!(participatingAirlineCount >= MIN_MULTICONSENSUS && votes < (participatingAirlineCount/2))){
+        if(!(participatingAirlineCount >= MIN_MULTICONSENSUS && votes < (participatingAirlineCount.div(2)))){
             flightSuretyData.registerAirline(airlineAddress);
             success = true;
         }
